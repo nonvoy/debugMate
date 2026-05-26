@@ -22,6 +22,7 @@ class BasicConfig(BaseSettings):
     """Basic configuration for the application."""
 
     debug: bool = Field(default=False, description="Enable debug mode")
+    log_level: str = Field(default="INFO", description="Logging level for the application")
     celery: CeleryConfig = Field(default_factory=CeleryConfig, description="Celery configuration")
 
     model_config = SettingsConfigDict(

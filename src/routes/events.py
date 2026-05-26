@@ -4,10 +4,12 @@ from fastapi import APIRouter, status, Depends
 
 from src.routes.schemas.events import EventCreate, EventGet
 from src.config.basic_config import get_config
+from src.config.logger import get_logger
 from src.services.celery.client import get_celery_client
 
 
 config = get_config()
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -35,5 +37,5 @@ async def create_event(event: EventCreate, celery_app=Depends(get_celery_client)
         **event.model_dump()
     )
     celery_app.send_task(config.celery.task_name, task_id=str(event_id), args=[created_event.model_dump()])
-    
+    logger.info(f"Event created with ID: {event_id} and published to Celery task queue.")
     return created_event
