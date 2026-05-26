@@ -6,7 +6,6 @@ from src.config.basic_config import get_config
 from src.routes.schemas.events import EventGet, Severity
 from src.services.celery.client import get_celery_client
 
-
 config = get_config()
 celery_app = get_celery_client()
 

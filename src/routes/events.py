@@ -1,12 +1,13 @@
 import uuid
+from typing import Annotated
 
-from fastapi import APIRouter, status, Depends
+from celery import Celery
+from fastapi import APIRouter, Depends, status
 
-from src.routes.schemas.events import EventCreate, EventGet
 from src.config.basic_config import get_config
 from src.config.logger import get_logger
+from src.routes.schemas.events import EventCreate, EventGet
 from src.services.celery.client import get_celery_client
-
 
 config = get_config()
 logger = get_logger(__name__)
@@ -15,11 +16,12 @@ router = APIRouter(prefix="/events", tags=["events"])
 
 
 @router.post("/", response_model=EventGet, status_code=status.HTTP_201_CREATED)
-async def create_event(event: EventCreate, celery_app=Depends(get_celery_client)):
+async def create_event(event: EventCreate, celery_app: Annotated[Celery, Depends(get_celery_client)]) -> EventGet:
     """
     Create a new event and publish it to the Celery task queue for processing.
 
-    This endpoint allows you to create a new event by providing the necessary details such as service name, severity, message, environment, event type, metadata, and timestamp.
+    This endpoint allows you to create a new event by providing the necessary details such as service name, severity, message, environment,
+    event type, metadata, and timestamp.
 
     - **service**: The name of the service that generated the event (e.g., 'auth-service', 'payment-service').
     - **severity**: The severity level of the event (e.g., 'info', 'warning', 'error').
@@ -32,10 +34,7 @@ async def create_event(event: EventCreate, celery_app=Depends(get_celery_client)
     Returns the created event with its unique identifier.
     """
     event_id = uuid.uuid4()
-    created_event = EventGet(
-        id=event_id,
-        **event.model_dump()
-    )
+    created_event = EventGet(id=event_id, **event.model_dump())
     celery_app.send_task(config.celery.task_name, task_id=str(event_id), args=[created_event.model_dump()])
     logger.info(f"Event created with ID: {event_id} and published to Celery task queue.")
     return created_event

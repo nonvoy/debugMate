@@ -1,5 +1,3 @@
-import pytest
-
 from fastapi import status
 from fastapi.testclient import TestClient
 
@@ -15,12 +13,12 @@ def test_create_event(client: TestClient):
         "environment": "production",
         "event_type": "authentication",
         "metadata": {"user_id": "12345"},
-        "timestamp": "2024-06-01T12:00:00Z"
+        "timestamp": "2024-06-01T12:00:00Z",
     }
 
     # When
     response = client.post("/api/v1/events/", json=event_data)
-    
+
     # Then
     assert response.status_code == status.HTTP_201_CREATED
 
