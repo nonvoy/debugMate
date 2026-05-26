@@ -18,6 +18,9 @@ def get_celery_client() -> Celery:
     if config.celery.endpoint_url:
         broker_transport_options["endpoint_url"] = config.celery.endpoint_url
 
+    if config.celery.is_secure is not None:
+        broker_transport_options["is_secure"] = config.celery.is_secure
+
     celery_app = Celery(
         config.celery.app_name,
         broker=config.celery.broker_url,

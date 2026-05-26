@@ -11,6 +11,7 @@ class CeleryConfig(BaseModel):
     task_name: str = Field(..., description="Name of the Celery task to process events")
     broker_url: str = Field(..., description="URL of the message broker")
     endpoint_url: str | None = Field(default=None, description="Custom endpoint URL for the broker")
+    is_secure: bool | None = Field(default=None, description="Use SSL when connecting to the broker")
     region: str = Field(default="eu-central-1", description="AWS region for the broker")
     visibility_timeout: int = Field(default=3600, description="Visibility timeout for tasks in seconds")
     polling_interval: int = Field(default=5, description="Polling interval for the broker in seconds")
