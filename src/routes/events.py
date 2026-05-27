@@ -15,12 +15,12 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/events", tags=["events"])
 
 
-@router.post("/", response_model=EventGet, status_code=status.HTTP_201_CREATED)
-async def create_event(event: EventCreate, celery_app: Annotated[Celery, Depends(get_celery_client)]) -> EventGet:
+@router.post("/", response_model=EventGet, status_code=status.HTTP_202_ACCEPTED)
+async def publish_event(event: EventCreate, celery_app: Annotated[Celery, Depends(get_celery_client)]) -> EventGet:
     """
-    Create a new event and publish it to the Celery task queue for processing.
+    Publish an event to the Celery task queue for processing.
 
-    This endpoint allows you to create a new event by providing the necessary details such as service name, severity, message, environment,
+    This endpoint allows you to publish an event by providing the necessary details such as service name, severity, message, environment,
     event type, metadata, and timestamp.
 
     - **service**: The name of the service that generated the event (e.g., 'auth-service', 'payment-service').
@@ -31,10 +31,40 @@ async def create_event(event: EventCreate, celery_app: Annotated[Celery, Depends
     - **metadata**: (Optional) Additional metadata related to the event (e.g., {'user_id': '12345', 'transaction_id': 'abcde'}).
     - **timestamp**: The timestamp when the event occurred in ISO 8601 format (e.g., '2024-06-01T12:00:00Z').
 
-    Returns the created event with its unique identifier.
+    Returns the published event with its unique identifier.
     """
     event_id = uuid.uuid4()
     created_event = EventGet(id=event_id, **event.model_dump())
     celery_app.send_task(config.celery.task_name, task_id=str(event_id), args=[created_event.model_dump()])
-    logger.info(f"Event created with ID: {event_id} and published to Celery task queue.")
+    logger.info(f"Event with ID: {event_id} published to Celery task queue.")
     return created_event
+
+
+@router.post("/batch", response_model=list[EventGet], status_code=status.HTTP_202_ACCEPTED)
+async def create_events_batch(events: list[EventCreate], celery_app: Annotated[Celery, Depends(get_celery_client)]) -> list[EventGet]:
+    """
+    Publish multiple events in a batch to the Celery task queue for processing.
+
+    This endpoint allows you to publish multiple events at once by providing a list of event details.
+    Each event should include the necessary information such as service name, severity, message, environment, event type, metadata, and timestamp.
+
+    - **service**: The name of the service that generated the event (e.g., 'auth-service', 'payment-service').
+    - **severity**: The severity level of the event (e.g., 'info', 'warning', 'error').
+    - **message**: A descriptive message about the event (e.g., 'User login successful', 'Payment failed due to insufficient funds').
+    - **environment**: (Optional)The environment where the event occurred (e.g., 'production', 'staging').
+    - **event_type**: (Optional) The type of event (e.g., 'authentication', 'payment').
+    - **metadata**: (Optional) Additional metadata related to the event (e.g., {'user_id': '12345', 'transaction_id': 'abcde'}).
+    - **timestamp**: The timestamp when the event occurred in ISO 8601 format (e.g., '2024-06-01T12:00:00Z').
+
+    Returns a list of published events with their unique identifiers and batch ID.
+    """
+    created_events = []
+    batch_id = uuid.uuid4()
+    for event in events:
+        event_id = uuid.uuid4()
+        created_event = EventGet(id=event_id, batch_id=batch_id, **event.model_dump())
+        created_events.append(created_event)
+
+    celery_app.send_task(config.celery.task_name, task_id=str(batch_id), args=[event.model_dump() for event in created_events])
+    logger.info(f"{len(created_events)} events published in batch with ID: {batch_id} to Celery task queue.")
+    return created_events
