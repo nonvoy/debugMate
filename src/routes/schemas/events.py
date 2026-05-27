@@ -2,7 +2,7 @@ import datetime as dt
 from enum import StrEnum, auto
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class Severity(StrEnum):
@@ -30,16 +30,26 @@ class Event(BaseModel):
         description="A descriptive message about the event",
         examples=["User login successful", "Payment failed due to insufficient funds"],
     )
-    environment: str | None = Field(
-        None, min_length=1, description="The environment where the event occurred (e.g., 'production', 'staging')", examples=["production", "staging"]
+    environment: str = Field(
+        "unknown",
+        min_length=1,
+        description="The environment where the event occurred (e.g., 'production', 'staging')",
+        examples=["production", "staging"],
     )
-    event_type: str | None = Field(
-        None, min_length=1, description="The type of event (e.g., 'authentication', 'payment')", examples=["application_log", "security_event"]
+    event_type: str = Field(
+        "unknown", min_length=1, description="The type of event (e.g., 'authentication', 'payment')", examples=["application_log", "security_event"]
     )
     metadata: dict = Field(
         default_factory=dict, description="Additional metadata related to the event", examples=[{"user_id": "12345", "transaction_id": "abcde"}]
     )
     timestamp: dt.datetime = Field(..., description="The timestamp when the event occurred", examples=["2024-06-01T12:00:00Z"])
+
+    @field_validator("service", "severity", "environment", "event_type", mode="before")
+    @classmethod
+    def normalize_string_fields(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip().lower()
+        return value
 
 
 class EventCreate(Event):
