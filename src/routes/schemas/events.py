@@ -65,3 +65,4 @@ class EventGet(Event):
     batch_id: UUID | None = Field(
         None, description="The unique identifier of the batch this event belongs to", examples=["123e4567-e89b-12d3-a456-426614174001"]
     )
+    published_at: dt.datetime = Field(..., description="The timestamp when the event was published", examples=["2024-06-01T12:00:00Z"])

@@ -1,3 +1,4 @@
+import datetime as dt
 import uuid
 from typing import Annotated
 
@@ -34,7 +35,7 @@ async def publish_event(event: EventCreate, celery_app: Annotated[Celery, Depend
     Returns the published event with its unique identifier.
     """
     event_id = uuid.uuid4()
-    created_event = EventGet(id=event_id, **event.model_dump())
+    created_event = EventGet(id=event_id, published_at=dt.datetime.now(dt.timezone.utc), **event.model_dump())
     celery_app.send_task(config.celery.task_name, task_id=str(event_id), args=[created_event.model_dump()])
     logger.info(f"Event with ID: {event_id} published to Celery task queue.")
     return created_event
@@ -60,9 +61,10 @@ async def create_events_batch(events: list[EventCreate], celery_app: Annotated[C
     """
     created_events = []
     batch_id = uuid.uuid4()
+    published_at = dt.datetime.now(dt.timezone.utc)
     for event in events:
         event_id = uuid.uuid4()
-        created_event = EventGet(id=event_id, batch_id=batch_id, **event.model_dump())
+        created_event = EventGet(id=event_id, batch_id=batch_id, published_at=published_at, **event.model_dump())
         created_events.append(created_event)
 
     celery_app.send_task(config.celery.task_name, task_id=str(batch_id), args=[event.model_dump() for event in created_events])

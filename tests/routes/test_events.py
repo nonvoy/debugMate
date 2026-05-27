@@ -24,6 +24,7 @@ def test_publish_event(client: TestClient):
 
     response_data = response.json()
     assert "id" in response_data
+    assert "published_at" in response_data
     assert response_data["service"] == event_data["service"]
     assert response_data["severity"] == event_data["severity"]
     assert response_data["message"] == event_data["message"]
@@ -77,6 +78,7 @@ def test_publish_events_in_batch(client: TestClient):
         assert response_data[i]["event_type"] == event["event_type"]
         assert response_data[i]["metadata"] == event["metadata"]
         assert response_data[i]["timestamp"] == event["timestamp"]
+        assert "published_at" in response_data[i]
         assert "batch_id" in response_data[i]
 
     assert response_data[0]["batch_id"] == response_data[1]["batch_id"]
