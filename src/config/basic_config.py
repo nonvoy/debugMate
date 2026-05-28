@@ -16,6 +16,7 @@ class CeleryConfig(BaseModel):
     visibility_timeout: int = Field(default=3600, description="Visibility timeout for tasks in seconds")
     polling_interval: int = Field(default=5, description="Polling interval for the broker in seconds")
     queue_name: str = Field(default="debugmate-queue", description="Name of the Celery task queue")
+    queue_url: str = Field(..., description="URL of the Celery task queue")
 
 
 class BasicConfig(BaseSettings):

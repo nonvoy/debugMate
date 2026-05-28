@@ -13,6 +13,11 @@ def get_celery_client() -> Celery:
         "region": config.celery.region,
         "visibility_timeout": config.celery.visibility_timeout,
         "polling_interval": config.celery.polling_interval,
+        "predefined_queues": {
+            config.celery.queue_name: {
+                "url": config.celery.queue_url,
+            },
+        },
     }
 
     if config.celery.endpoint_url:
