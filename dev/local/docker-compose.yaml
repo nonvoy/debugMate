@@ -1,0 +1,40 @@
+services:
+  router:
+    build:
+      context: ../..
+      dockerfile: dev/local/service/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      DEBUG: "false"
+      ENVIRONMENT: local
+      CELERY__APP_NAME: debugmate
+      CELERY__TASK_NAME: debugmate.debug_endpoint
+      CELERY__BROKER_URL: redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  debug-worker:
+    build:
+      context: ../..
+      dockerfile: dev/local/worker/Dockerfile
+    environment:
+      DEBUG: "false"
+      ENVIRONMENT: local
+      CELERY__APP_NAME: debugmate
+      CELERY__TASK_NAME: debugmate.debug_endpoint
+      CELERY__BROKER_URL: redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7.4-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20

@@ -8,9 +8,10 @@ WORKDIR /app
 RUN groupadd --system app \
     && useradd --system --gid app --home-dir /app --shell /usr/sbin/nologin app
 
-COPY requirements.txt .
+COPY dependencies/requirements-base.txt .
+COPY dependencies/requirements-local.txt .
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+    && pip install --no-cache-dir -r requirements-local.txt
 
 COPY debug_worker.py ./debug_worker.py
 COPY src ./src
